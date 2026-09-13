@@ -1,0 +1,6 @@
+{
+  "name": "BloxVerse 3D",
+  "description": "Videojuego 3D low-poly de plataformas, exploración y minijuegos con avatar de bloques, física y optimización para móviles y escritorio.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
