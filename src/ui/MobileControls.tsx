@@ -6,16 +6,18 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import { InputManager } from '../core/InputManager';
-import { ArrowUp, Zap, MessageSquare } from 'lucide-react';
+import { ArrowUp, Zap, Key, Flame, Flashlight } from 'lucide-react';
 
 interface MobileControlsProps {
   showInteractPrompt: boolean;
   interactPromptText: string;
+  isFlashlightOn?: boolean;
 }
 
 export const MobileControls: React.FC<MobileControlsProps> = ({
   showInteractPrompt,
   interactPromptText,
+  isFlashlightOn = true,
 }) => {
   const input = InputManager.getInstance();
 
@@ -179,45 +181,65 @@ export const MobileControls: React.FC<MobileControlsProps> = ({
 
       {/* Action Buttons (Bottom Right) */}
       <div className="pointer-events-auto absolute bottom-6 right-6 flex flex-col items-end gap-3 touch-none">
-        {/* Interact button (appears or pulses when near target) */}
+        {/* Interact button (appears or pulses when near door or key) */}
         {showInteractPrompt && (
           <button
             id="btn-mobile-interact"
-            className="px-4 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 text-white font-black text-sm tracking-wide shadow-xl shadow-emerald-500/30 border-2 border-white/80 animate-bounce flex items-center gap-2 active:scale-95 transition-all"
+            className="px-4 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-sm tracking-wide shadow-xl shadow-amber-500/30 border-2 border-white/80 animate-bounce flex items-center gap-2 active:scale-95 transition-all"
             onTouchStart={(e) => {
               e.preventDefault();
               input.triggerMobileInteract();
             }}
             onClick={() => input.triggerMobileInteract()}
           >
-            <MessageSquare className="w-5 h-5" />
-            <span>ACCION</span>
+            <Key className="w-5 h-5 text-yellow-200" />
+            <span>{interactPromptText.length > 20 ? 'INTERACTUAR' : interactPromptText.replace(/^E\s*-\s*/, '')}</span>
           </button>
         )}
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
+          {/* Flashlight Toggle Button */}
+          <button
+            id="btn-mobile-flashlight"
+            className={`w-13 h-13 rounded-2xl flex flex-col items-center justify-center font-bold text-xs shadow-lg border-2 active:scale-90 transition-all ${
+              isFlashlightOn
+                ? 'bg-yellow-400 text-slate-900 border-yellow-200 shadow-yellow-400/40 ring-4 ring-yellow-400/30'
+                : 'bg-slate-900/80 text-slate-400 border-white/20'
+            }`}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              input.triggerMobileFlashlight();
+            }}
+            onClick={() => input.triggerMobileFlashlight()}
+            title="Encender/Apagar Linterna (F)"
+          >
+            <Flashlight className="w-5 h-5" />
+            <span className="text-[10px] mt-0.5">LUZ</span>
+          </button>
+
           {/* Run Toggle Button */}
           <button
             id="btn-mobile-run"
-            className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center font-bold text-xs shadow-lg border-2 active:scale-90 transition-all ${
+            className={`w-13 h-13 rounded-2xl flex flex-col items-center justify-center font-bold text-xs shadow-lg border-2 active:scale-90 transition-all ${
               isRunning
-                ? 'bg-amber-500 text-white border-amber-300 shadow-amber-500/40 ring-4 ring-amber-400/30'
-                : 'bg-slate-900/70 text-slate-300 border-white/20'
+                ? 'bg-rose-600 text-white border-rose-300 shadow-rose-600/40 ring-4 ring-rose-500/30 animate-pulse'
+                : 'bg-slate-900/80 text-slate-300 border-white/20'
             }`}
             onTouchStart={(e) => {
               e.preventDefault();
               toggleRun();
             }}
             onClick={toggleRun}
+            title="Correr (Shift)"
           >
             <Zap className="w-5 h-5" />
-            <span>CORRER</span>
+            <span className="text-[10px] mt-0.5">CORRER</span>
           </button>
 
           {/* Jump Button (Primary & Big) */}
           <button
             id="btn-mobile-jump"
-            className="w-18 h-18 rounded-full bg-gradient-to-tr from-sky-500 to-blue-600 active:from-sky-400 active:to-blue-500 text-white font-black text-base shadow-xl shadow-sky-500/40 border-3 border-white/80 flex flex-col items-center justify-center active:scale-90 transition-all"
+            className="w-16 h-16 rounded-full bg-gradient-to-tr from-sky-500 to-blue-600 active:from-sky-400 active:to-blue-500 text-white font-black text-base shadow-xl shadow-sky-500/40 border-3 border-white/80 flex flex-col items-center justify-center active:scale-90 transition-all"
             onTouchStart={(e) => {
               e.preventDefault();
               input.setMobileJump(true);
@@ -230,7 +252,7 @@ export const MobileControls: React.FC<MobileControlsProps> = ({
             onMouseUp={() => input.setMobileJump(false)}
           >
             <ArrowUp className="w-7 h-7 stroke-[3]" />
-            <span className="text-[11px] font-black -mt-1 tracking-wider">SALTO</span>
+            <span className="text-[10px] font-black -mt-1 tracking-wider">SALTO</span>
           </button>
         </div>
       </div>

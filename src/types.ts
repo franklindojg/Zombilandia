@@ -85,4 +85,45 @@ export interface DialogueNode {
   }[];
 }
 
-export type GameModeType = 'SANDBOX' | 'OBBY' | 'COIN_RUSH';
+export type GameModeType = 'SANDBOX' | 'OBBY' | 'COIN_RUSH' | 'SURVIVAL' | 'ESCAPE' | 'EXPLORE';
+
+export enum GhostState {
+  PATROL = 'PATROL',
+  SEARCH = 'SEARCH',
+  ALERT = 'ALERT',
+  CHASE = 'CHASE',
+  ATTACK = 'ATTACK',
+}
+
+export interface MansionDoor {
+  id: string;
+  name: string;
+  position: [number, number, number];
+  rotationY: number;
+  isOpen: boolean;
+  isLocked: boolean;
+  requiredKeyId?: string;
+  pivotGroup?: any;
+}
+
+export interface MansionKey {
+  id: string;
+  name: string;
+  color: string;
+  locationName: string;
+  position: [number, number, number];
+  collected: boolean;
+}
+
+export interface HorrorGameState {
+  ghostDistance: number;
+  ghostState: GhostState;
+  keysCollected: number;
+  totalKeys: number;
+  hasEscaped: boolean;
+  isCaught: boolean;
+  stamina: number;
+  maxStamina: number;
+  isFlashlightOn: boolean;
+  sanity: number;
+}

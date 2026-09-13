@@ -34,6 +34,7 @@ export class InputManager {
   public invertedY: boolean = false;
 
   private onInteractCallback: (() => void) | null = null;
+  private onFlashlightCallback: (() => void) | null = null;
   private onPauseCallback: (() => void) | null = null;
 
   private constructor() {
@@ -54,6 +55,9 @@ export class InputManager {
 
       if (e.code === 'KeyE') {
         if (this.onInteractCallback) this.onInteractCallback();
+      }
+      if (e.code === 'KeyF') {
+        if (this.onFlashlightCallback) this.onFlashlightCallback();
       }
       if (e.code === 'Escape') {
         if (this.onPauseCallback) this.onPauseCallback();
@@ -126,6 +130,10 @@ export class InputManager {
     this.onInteractCallback = cb;
   }
 
+  public setOnFlashlight(cb: () => void): void {
+    this.onFlashlightCallback = cb;
+  }
+
   public setOnPause(cb: () => void): void {
     this.onPauseCallback = cb;
   }
@@ -142,6 +150,12 @@ export class InputManager {
 
   public setMobileRun(active: boolean): void {
     this.mobileRun = active;
+  }
+
+  public triggerMobileFlashlight(): void {
+    if (this.onFlashlightCallback) {
+      this.onFlashlightCallback();
+    }
   }
 
   public triggerMobileInteract(): void {

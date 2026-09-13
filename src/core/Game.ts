@@ -14,15 +14,19 @@ import { Player } from '../player/Player';
 import { PlayerController } from '../player/PlayerController';
 import { ThirdPersonCamera } from '../camera/ThirdPersonCamera';
 import { GameModeManager } from '../systems/GameModeManager';
-import { DialogueNode, GraphicQuality, PlayerAppearance } from '../types';
+import { DialogueNode, GraphicQuality, HorrorGameState, PlayerAppearance } from '../types';
 
 export interface GameEvents {
   onHealthChange?: (hp: number, maxHp: number) => void;
   onCoinsChange?: (coins: number) => void;
   onFpsUpdate?: (fps: number) => void;
   onCheckpointToast?: (name: string, stage: number) => void;
+  onToast?: (msg: string) => void;
   onDialogueOpen?: (node: DialogueNode) => void;
   onModeStateChange?: (state: any) => void;
+  onHorrorStateUpdate?: (state: HorrorGameState) => void;
+  onVictory?: () => void;
+  onGameOver?: () => void;
 }
 
 export class Game {
@@ -76,11 +80,11 @@ export class Game {
 
     const savedData = this.saveManager.getData();
 
-    // 1. Build World
+    // 1. Build Haunted Mansion World
     this.world = new World(this.scene);
 
-    // 2. Spawn Player
-    const spawnPos = new THREE.Vector3(0, 1.5, 0);
+    // 2. Spawn Player in Grand Foyer
+    const spawnPos = new THREE.Vector3(0, 1.2, 5);
     this.player = new Player(savedData.appearance, spawnPos);
     this.player.coins = savedData.coins;
     this.scene.add(this.player.group);
@@ -88,39 +92,22 @@ export class Game {
     // 3. Controller
     this.playerController = new PlayerController(this.player);
 
-    // 4. Hook Checkpoints
-    this.world.checkpointSystem.setOnCheckpointActivated((name, stage) => {
-      if (this.events.onCheckpointToast) {
-        this.events.onCheckpointToast(name, stage);
+    // 4. Hook Flashlight Key & Button
+    this.inputManager.setOnFlashlight(() => {
+      const isOn = this.player.toggleFlashlight();
+      if (this.events.onToast) {
+        this.events.onToast(isOn ? '🔦 Linterna Encendida' : '🔦 Linterna Apagada');
       }
-      this.gameModeManager.advanceObbyStage(stage);
     });
 
-    // 5. Hook Coins
-    this.world.collectibleManager.update = ((orig) => {
-      return (delta: number, playerPos: THREE.Vector3, onCollect: any) => {
-        orig.call(this.world.collectibleManager, delta, playerPos, (coin: any) => {
-          this.player.coins += coin.value;
-          this.saveManager.save({ coins: this.player.coins });
-          if (this.events.onCoinsChange) {
-            this.events.onCoinsChange(this.player.coins);
-          }
-          this.gameModeManager.addScore(1);
-        });
-      };
-    })(this.world.collectibleManager.update);
-
-    // 6. Hook Interactions
+    // 5. Hook Interactions (Doors & Keys)
     this.inputManager.setOnInteract(() => {
-      const target = this.world.interactionSystem.currentTarget;
-      if (target) {
-        if (target.type === 'npc') {
-          const npc = this.world.npcs.find((n) => n.id === target.id);
-          if (npc && npc.dialogues.length > 0 && this.events.onDialogueOpen) {
-            this.events.onDialogueOpen(npc.dialogues[0]);
-          }
-        }
-        this.world.interactionSystem.triggerCurrentInteraction();
+      const res = this.world.handleInteract(
+        (keyId) => this.player.hasInventoryKey(keyId),
+        (keyId) => this.player.addInventoryKey(keyId)
+      );
+      if (res.message && this.events.onToast) {
+        this.events.onToast(res.message);
       }
     });
 
@@ -128,12 +115,24 @@ export class Game {
       this.togglePause();
     });
 
-    // 7. Hook Mode state
-    this.gameModeManager.setOnStateChange((state) => {
-      if (this.events.onModeStateChange) {
-        this.events.onModeStateChange(state);
+    // 6. Hook Ghost Attacks & Escape Trigger
+    this.world.onGhostCatch = (damage) => {
+      this.player.takeDamage(damage);
+      if (this.events.onHealthChange) {
+        this.events.onHealthChange(this.player.health, this.player.maxHealth);
       }
-    });
+      if (this.player.health <= 0) {
+        if (this.events.onGameOver) {
+          this.events.onGameOver();
+        }
+      }
+    };
+
+    this.world.onPlayerEscaped = () => {
+      if (this.events.onVictory) {
+        this.events.onVictory();
+      }
+    };
 
     onProgress(1.0);
   }
@@ -212,13 +211,20 @@ export class Game {
       // 3. Player Controller Update
       this.playerController.update(delta, input, this.thirdPersonCamera.yaw);
 
-      // 4. World Update (Sectors, moving obstacles, NPCs, triggers)
+      // 4. World & Ghost Update
       const cameraDir = new THREE.Vector3();
       this.thirdPersonCamera.camera.getWorldDirection(cameraDir);
-      this.world.update(delta, this.player.physics.position, cameraDir);
 
-      // 5. Game Mode Update
-      this.gameModeManager.update(delta);
+      const isRunning = input.run && !this.player.isExhausted && this.player.stamina > 0;
+      this.world.update(delta, this.player.physics.position, cameraDir, isRunning, this.player.isFlashlightOn);
+
+      // 5. Flashlight interference when ghost is near (< 14m)
+      const ghostDist = this.world.getGhostDistance();
+      if (ghostDist < 14) {
+        this.player.setFlashlightFlicker(true);
+      } else {
+        this.player.setFlashlightFlicker(false);
+      }
 
       // 6. HUD Event callbacks
       if (this.events.onHealthChange) {
@@ -227,11 +233,36 @@ export class Game {
       if (this.events.onFpsUpdate) {
         this.events.onFpsUpdate(this.rendererManager.currentFps);
       }
+      if (this.events.onHorrorStateUpdate) {
+        this.events.onHorrorStateUpdate({
+          ghostDistance: ghostDist,
+          ghostState: this.world.getGhostState(),
+          keysCollected: this.world.keysCollected,
+          totalKeys: this.world.totalKeys,
+          hasEscaped: this.world.hasEscaped,
+          isCaught: this.player.health <= 0,
+          stamina: this.player.stamina,
+          maxStamina: this.player.maxStamina,
+          isFlashlightOn: this.player.isFlashlightOn,
+          sanity: Math.round(this.player.health),
+        });
+      }
     }
 
     // Render Scene
     this.rendererManager.render(this.scene, this.thirdPersonCamera.camera);
   };
+
+  public restartHorrorGame(): void {
+    if (this.player && this.world) {
+      this.player.respawn();
+      this.player.collectedKeys = [];
+      this.player.stamina = 100;
+      this.world.keysCollected = 0;
+      this.world.hasEscaped = false;
+      this.world.respawnGhost();
+    }
+  }
 
   public dispose(): void {
     cancelAnimationFrame(this.animFrameId);

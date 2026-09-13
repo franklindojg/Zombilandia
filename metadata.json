@@ -1,6 +1,6 @@
 {
-  "name": "BloxVerse 3D",
-  "description": "Videojuego 3D low-poly de plataformas, exploración y minijuegos con avatar de bloques, física y optimización para móviles y escritorio.",
+  "name": "Mansion del Terror 3D",
+  "description": "Juego de terror 3D en primera y tercera persona dentro de una inmensa mansión embrujada con iluminación dinámica, linterna, puertas interactivas y un temible fantasma que te persigue. Encuentra las llaves y escapa.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

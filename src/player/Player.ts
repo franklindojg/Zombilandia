@@ -39,6 +39,17 @@ export class Player {
   public isInvulnerable: boolean = false;
   private invulnerableTimer: number = 0;
 
+  // Horror & Survival state
+  public isFlashlightOn: boolean = true;
+  public flashlightGroup!: THREE.Group;
+  public flashlightSpot!: THREE.SpotLight;
+  public flashlightPoint!: THREE.PointLight;
+  public flashlightTarget!: THREE.Object3D;
+  public stamina: number = 100;
+  public maxStamina: number = 100;
+  public isExhausted: boolean = false;
+  public collectedKeys: string[] = [];
+
   // Visual mesh container (handles horizontal rotation)
   public visualMesh: THREE.Group;
 
@@ -55,8 +66,86 @@ export class Player {
     this.animation = new PlayerAnimation(bones);
     this.customizer = new AvatarCustomizer(initialAppearance);
 
+    // Build Flashlight (Linterna de supervivencia)
+    this.buildFlashlight();
+
     // Sync appearance
     this.applyAppearance(initialAppearance);
+  }
+
+  private buildFlashlight(): void {
+    this.flashlightGroup = new THREE.Group();
+    this.flashlightGroup.position.set(0.35, 1.0, 0.4);
+
+    // Flashlight casing (black tactical metal)
+    const caseGeo = new THREE.CylinderGeometry(0.06, 0.08, 0.35, 10);
+    const caseMat = new THREE.MeshStandardMaterial({
+      color: 0x1e293b,
+      metalness: 0.8,
+      roughness: 0.2,
+    });
+    const torchMesh = new THREE.Mesh(caseGeo, caseMat);
+    torchMesh.rotation.x = Math.PI / 2;
+    this.flashlightGroup.add(torchMesh);
+
+    // Glass lens with glowing yellow-white rim
+    const lensGeo = new THREE.CircleGeometry(0.08, 12);
+    const lensMat = new THREE.MeshBasicMaterial({ color: 0xfffbeb });
+    const lensMesh = new THREE.Mesh(lensGeo, lensMat);
+    lensMesh.position.set(0, 0, 0.18);
+    this.flashlightGroup.add(lensMesh);
+
+    // Flashlight SpotLight (focused forward beam cutting through dark rooms)
+    this.flashlightSpot = new THREE.SpotLight(0xfff7ed, 4.2, 34, Math.PI / 5.2, 0.5, 1.6);
+    this.flashlightSpot.position.set(0, 0, 0.2);
+    this.flashlightSpot.castShadow = true;
+    this.flashlightSpot.shadow.bias = -0.001;
+    this.flashlightSpot.shadow.mapSize.width = 512;
+    this.flashlightSpot.shadow.mapSize.height = 512;
+
+    this.flashlightTarget = new THREE.Object3D();
+    this.flashlightTarget.position.set(0, 0, 15);
+    this.flashlightGroup.add(this.flashlightTarget);
+    this.flashlightSpot.target = this.flashlightTarget;
+    this.flashlightGroup.add(this.flashlightSpot);
+
+    // Inner soft PointLight for ambient hand glow
+    this.flashlightPoint = new THREE.PointLight(0xffedd5, 1.4, 6, 1.8);
+    this.flashlightPoint.position.set(0, 0, 0.2);
+    this.flashlightGroup.add(this.flashlightPoint);
+
+    this.visualMesh.add(this.flashlightGroup);
+  }
+
+  public toggleFlashlight(): boolean {
+    this.isFlashlightOn = !this.isFlashlightOn;
+    this.flashlightSpot.visible = this.isFlashlightOn;
+    this.flashlightPoint.visible = this.isFlashlightOn;
+    AudioManager.getInstance().playFlashlightClick();
+    return this.isFlashlightOn;
+  }
+
+  public setFlashlightFlicker(flicker: boolean): void {
+    if (!this.isFlashlightOn) return;
+    if (flicker) {
+      const isDip = Math.random() < 0.35;
+      this.flashlightSpot.intensity = isDip ? 0.3 : 4.2;
+      this.flashlightPoint.intensity = isDip ? 0.1 : 1.4;
+    } else {
+      this.flashlightSpot.intensity = 4.2;
+      this.flashlightPoint.intensity = 1.4;
+    }
+  }
+
+  public addInventoryKey(keyId: string): void {
+    if (!this.collectedKeys.includes(keyId)) {
+      this.collectedKeys.push(keyId);
+    }
+  }
+
+  public hasInventoryKey(keyId?: string): boolean {
+    if (!keyId) return true;
+    return this.collectedKeys.includes(keyId);
   }
 
   private buildHumanoidModel(appearance: PlayerAppearance): AvatarBones {

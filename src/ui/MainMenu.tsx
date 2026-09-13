@@ -1,10 +1,11 @@
 /**
- * BloxVerse 3D - MainMenu
- * Youthful, colorful, modern main menu with responsive big buttons for mobile and PC.
+ * Mansión del Terror 3D - MainMenu
+ * Dark gothic horror title screen with quick start, survival guide,
+ * avatar customizer, and audio toggle.
  */
 
 import React from 'react';
-import { Play, User, Settings, Trophy, HelpCircle, Sparkles, Coins } from 'lucide-react';
+import { Play, User, Settings, HelpCircle, Skull, Flashlight, Key } from 'lucide-react';
 import { GameModeType } from '../types';
 
 interface MainMenuProps {
@@ -12,8 +13,8 @@ interface MainMenuProps {
   onOpenAvatar: () => void;
   onOpenSettings: () => void;
   onOpenControlsGuide: () => void;
-  coins: number;
-  bestObbyTime: number | null;
+  coins?: number;
+  bestObbyTime?: number | null;
 }
 
 export const MainMenu: React.FC<MainMenuProps> = ({
@@ -21,65 +22,74 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   onOpenAvatar,
   onOpenSettings,
   onOpenControlsGuide,
-  coins,
-  bestObbyTime,
 }) => {
   return (
-    <div id="main-menu-root" className="absolute inset-0 z-40 flex flex-col items-center justify-between p-6 sm:p-10 select-none overflow-y-auto">
-      {/* Background Dim / Ambient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-slate-950/60 via-slate-900/40 to-slate-950/80 backdrop-blur-xs pointer-events-none" />
+    <div
+      id="main-menu-root"
+      className="absolute inset-0 z-40 flex flex-col items-center justify-between p-6 sm:p-10 select-none overflow-y-auto"
+    >
+      {/* Dark mist vignette background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-black/90 backdrop-blur-xs pointer-events-none" />
 
-      {/* Top Bar with Coins & Stats */}
+      {/* Top Bar */}
       <div className="relative z-10 w-full max-w-4xl flex items-center justify-between">
-        <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-slate-900/80 border border-amber-400/40 backdrop-blur-md shadow-lg">
-          <Coins className="w-5 h-5 text-amber-400 fill-amber-400" />
-          <span className="font-black text-amber-300 text-base">{coins}</span>
-          <span className="text-[11px] font-bold text-amber-500 uppercase tracking-wider">Monedas</span>
+        <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-black/80 border border-red-900/60 backdrop-blur-md shadow-lg">
+          <Skull className="w-5 h-5 text-red-500 animate-pulse" />
+          <span className="text-xs font-black text-red-300 uppercase tracking-widest">
+            Pesadilla Activa
+          </span>
         </div>
 
-        {bestObbyTime !== null && (
-          <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-slate-900/80 border border-purple-400/40 backdrop-blur-md shadow-lg">
-            <Trophy className="w-5 h-5 text-purple-400" />
-            <span className="text-xs font-bold text-slate-300">Récord Obby:</span>
-            <span className="font-black text-purple-300 text-sm">{bestObbyTime}s</span>
-          </div>
-        )}
+        <button
+          id="btn-menu-help"
+          onClick={onOpenControlsGuide}
+          className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-black/80 hover:bg-slate-900 text-slate-300 border border-white/15 backdrop-blur-md shadow-lg active:scale-95 transition-all text-xs font-bold"
+        >
+          <HelpCircle className="w-4 h-4 text-amber-400" />
+          <span>Cómo Jugar</span>
+        </button>
       </div>
 
       {/* Hero Title */}
       <div className="relative z-10 flex flex-col items-center text-center my-auto">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-sky-500/20 border border-sky-400/40 text-sky-300 font-bold text-xs tracking-widest uppercase mb-4">
-          <Sparkles className="w-4 h-4 text-amber-400" />
-          <span>Videojuego 3D Sandbox & Plataformas</span>
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-950/60 border border-red-500/40 text-red-400 font-bold text-xs tracking-widest uppercase mb-4 shadow-lg shadow-red-950/50">
+          <Skull className="w-4 h-4" />
+          <span>Juego de Terror y Supervivencia 3D</span>
         </div>
 
-        <h1 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-cyan-300 to-amber-300 drop-shadow-lg">
-          BLOXVERSE 3D
+        <h1 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-red-200 via-red-500 to-rose-950 drop-shadow-[0_8px_25px_rgba(220,38,38,0.7)]">
+          MANSIÓN DEL TERROR
         </h1>
-        <p className="max-w-md text-slate-200 font-medium text-sm sm:text-base mt-2 drop-shadow">
-          Explora un mundo vivo de bloques, supera el gran Obby y personaliza a tu héroe.
+
+        <p className="max-w-md text-slate-300 font-medium text-sm sm:text-base mt-3 drop-shadow leading-relaxed">
+          Estás atrapado en una inmensa casa abandonada. Explora sus habitaciones oscuras,
+          abre puertas, encuentra las <strong className="text-amber-400">3 llaves</strong> y
+          huye del <strong className="text-red-400">fantasma errante</strong> antes de que te atrape.
         </p>
 
+        {/* Feature badges */}
+        <div className="flex flex-wrap justify-center gap-2.5 mt-5">
+          <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/70 border border-amber-500/30 text-amber-300 text-xs font-semibold">
+            <Flashlight className="w-3.5 h-3.5" /> Linterna interactiva
+          </span>
+          <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/70 border border-red-500/30 text-red-300 text-xs font-semibold">
+            <Skull className="w-3.5 h-3.5" /> Fantasma con IA y oído
+          </span>
+          <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/70 border border-cyan-500/30 text-cyan-300 text-xs font-semibold">
+            <Key className="w-3.5 h-3.5" /> Puertas y 3 Llaves
+          </span>
+        </div>
+
         {/* Primary Action Buttons */}
-        <div className="w-full max-w-sm flex flex-col gap-3.5 mt-8 sm:mt-10">
+        <div className="w-full max-w-sm flex flex-col gap-3 mt-8">
           {/* Main Play Button */}
           <button
-            id="btn-menu-play-sandbox"
+            id="btn-menu-play-horror"
             onClick={() => onPlay('SANDBOX')}
-            className="w-full py-4 px-6 rounded-3xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-400 hover:from-emerald-400 hover:to-teal-400 text-white font-black text-lg tracking-wider shadow-2xl shadow-emerald-500/40 border-3 border-white/80 active:scale-95 transition-all flex items-center justify-center gap-3"
+            className="w-full py-4 px-6 rounded-3xl bg-gradient-to-r from-red-700 via-rose-700 to-red-800 hover:from-red-600 hover:to-rose-600 text-white font-black text-lg tracking-widest shadow-2xl shadow-red-900/60 border-2 border-red-400/80 active:scale-95 transition-all flex items-center justify-center gap-3 animate-pulse"
           >
             <Play className="w-6 h-6 fill-white" />
-            <span>JUGAR AHORA</span>
-          </button>
-
-          {/* Obby Challenge Mode */}
-          <button
-            id="btn-menu-play-obby"
-            onClick={() => onPlay('OBBY')}
-            className="w-full py-3 px-6 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-sm tracking-wider shadow-xl shadow-purple-600/30 border-2 border-white/60 active:scale-95 transition-all flex items-center justify-center gap-2"
-          >
-            <Trophy className="w-5 h-5 text-amber-300" />
-            <span>DESAFÍO OBBY PARKOUR</span>
+            <span>ENTRAR A LA MANSIÓN</span>
           </button>
 
           {/* Secondary Buttons Row */}
@@ -87,16 +97,16 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             <button
               id="btn-menu-avatar"
               onClick={onOpenAvatar}
-              className="py-3 px-4 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-sky-300 font-black text-xs sm:text-sm tracking-wide border-2 border-sky-400/40 backdrop-blur-md shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
+              className="py-3 px-4 rounded-2xl bg-black/80 hover:bg-slate-900 text-slate-300 font-black text-xs sm:text-sm tracking-wide border-2 border-slate-800 backdrop-blur-md shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
             >
               <User className="w-4 h-4" />
-              <span>AVATAR</span>
+              <span>PERSONAJE</span>
             </button>
 
             <button
               id="btn-menu-settings"
               onClick={onOpenSettings}
-              className="py-3 px-4 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 font-black text-xs sm:text-sm tracking-wide border-2 border-white/20 backdrop-blur-md shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
+              className="py-3 px-4 rounded-2xl bg-black/80 hover:bg-slate-900 text-slate-300 font-black text-xs sm:text-sm tracking-wide border-2 border-slate-800 backdrop-blur-md shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
             >
               <Settings className="w-4 h-4" />
               <span>AJUSTES</span>
@@ -105,17 +115,9 @@ export const MainMenu: React.FC<MainMenuProps> = ({
         </div>
       </div>
 
-      {/* Bottom info & Controls guide trigger */}
-      <div className="relative z-10 w-full max-w-4xl flex items-center justify-between text-xs text-slate-400">
-        <span>Optimizado para Android & PC</span>
-        <button
-          id="btn-menu-controls-guide"
-          onClick={onOpenControlsGuide}
-          className="flex items-center gap-1.5 hover:text-sky-300 transition text-slate-300 font-semibold underline"
-        >
-          <HelpCircle className="w-4 h-4" />
-          <span>Ver Controles</span>
-        </button>
+      {/* Footer */}
+      <div className="relative z-10 text-center text-[11px] text-slate-500">
+        Three.js WebGL &bull; Iluminación dinámica &bull; Optimizado para Android y PC
       </div>
     </div>
   );

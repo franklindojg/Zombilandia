@@ -54,8 +54,25 @@ export class PlayerController {
       this.player.visualMesh.rotation.y += diff * Math.min(1, delta * 16);
     }
 
-    // 2. Update Physics
-    this.player.physics.update(delta, moveDir, input.run, input.jump);
+    // 2. Stamina Management for Sprinting (Running from the Ghost)
+    const isMoving = moveDir.lengthSq() > 0.01;
+    let effectiveRun = false;
+
+    if (input.run && isMoving && !this.player.isExhausted) {
+      effectiveRun = true;
+      this.player.stamina = Math.max(0, this.player.stamina - delta * 24);
+      if (this.player.stamina <= 0) {
+        this.player.isExhausted = true;
+      }
+    } else {
+      this.player.stamina = Math.min(this.player.maxStamina, this.player.stamina + delta * 18);
+      if (this.player.isExhausted && this.player.stamina > 25) {
+        this.player.isExhausted = false;
+      }
+    }
+
+    // Update Physics
+    this.player.physics.update(delta, moveDir, effectiveRun, input.jump);
 
     // 3. Audio & State events
     const isGrounded = this.player.physics.isGrounded;
