@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Vigilante Kart 8 PS1 - Android Optimizado - 5 Carros</title>
+  <link rel="stylesheet" href="./styles.css">
+  <style>
+    :root {
+      --font-display: 'Trebuchet MS', system-ui, sans-serif;
+      --font-body: system-ui, Arial, sans-serif;
+      --font-mono: 'Courier New', monospace;
+    }
+    * {
+      user-select: none;
+      -webkit-user-select: none;
+      box-sizing: border-box;
+    }
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #090b10;
+      font-family: var(--font-body);
+      color: #f8fafc;
+    }
+    .font-kart {
+      font-family: var(--font-display);
+      letter-spacing: 0.03em;
+    }
+    .font-hud {
+      font-family: var(--font-mono);
+    }
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+    }
+    .ui-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .interactive {
+      pointer-events: auto;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(245, 158, 11, 0.7);
+      border-radius: 9999px;
+    }
+    @keyframes pulse-glow {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 18px rgba(239, 68, 68, 0.65); }
+      50% { transform: scale(1.06); box-shadow: 0 0 32px rgba(245, 158, 11, 0.95); }
+    }
+    .weapon-ready-glow {
+      animation: pulse-glow 1.1s infinite ease-in-out;
+    }
+    .kart-shadow-text {
+      text-shadow: 0 4px 14px rgba(0, 0, 0, 0.9);
+    }
+    /* Scanlines sutiles estilo PS1 CRT opcional */
+    .ps1-scanlines {
+      background: linear-gradient(
+        rgba(18, 16, 16, 0) 50%, 
+        rgba(0, 0, 0, 0.18) 50%
+      );
+      background-size: 100% 4px;
+    }
+    /* Pantallas Android horizontales: controles y HUD sin scroll lateral. */
+    #hud-screen button { touch-action: none; -webkit-tap-highlight-color: transparent; }
+  </style>
+  <link rel="stylesheet" href="./android.css?v=meadow-models-r1">
+  <script type="importmap">
+    {
+      "imports": {
+            "three": "./vendor/three.module.js",
+            "three/addons/": "./vendor/addons/",
+            "./js/arena-selection.js": "./js/arena-selection.js?v=meadow-models-r1",
+            "./js/arena.js": "./js/arena.js?v=meadow-models-r1",
+            "./js/audio.js": "./js/audio.js?v=meadow-models-r1",
+            "./js/collision.js": "./js/collision.js?v=meadow-models-r1",
+            "./js/config.js": "./js/config.js?v=meadow-models-r1",
+            "./js/controls.js": "./js/controls.js?v=meadow-models-r1",
+            "./js/effects.js": "./js/effects.js?v=meadow-models-r1",
+            "./js/export.js": "./js/export.js?v=meadow-models-r1",
+            "./js/graphics.js": "./js/graphics.js?v=meadow-models-r1",
+            "./js/hangar.js": "./js/hangar.js?v=meadow-models-r1",
+            "./js/hud.js": "./js/hud.js?v=meadow-models-r1",
+            "./js/karts.js": "./js/karts.js?v=meadow-models-r1",
+            "./js/main.js": "./js/main.js?v=meadow-models-r1",
+            "./js/match.js": "./js/match.js?v=meadow-models-r1",
+            "./js/meadow-layout.js": "./js/meadow-layout.js?v=meadow-models-r1",
+            "./js/meadow-model-geometry.js": "./js/meadow-model-geometry.js?v=meadow-models-r1",
+            "./js/meadow-props.js": "./js/meadow-props.js?v=meadow-models-r1",
+            "./js/mesh-optimizer.js": "./js/mesh-optimizer.js?v=meadow-models-r1",
+            "./js/quality.js": "./js/quality.js?v=meadow-models-r1",
+            "./js/ramp-physics.js": "./js/ramp-physics.js?v=meadow-models-r1",
+            "./js/simulation.js": "./js/simulation.js?v=meadow-models-r1",
+            "./js/sky.js": "./js/sky.js?v=meadow-models-r1",
+            "./js/state.js": "./js/state.js?v=meadow-models-r1",
+            "./js/surface-physics.js": "./js/surface-physics.js?v=meadow-models-r1",
+            "./js/vehicles.js": "./js/vehicles.js?v=meadow-models-r1",
+            "./js/wasm-physics.js": "./js/wasm-physics.js?v=meadow-models-r1",
+            "./js/weapons.js": "./js/weapons.js?v=meadow-models-r1"
+      }
+}
+  </script>
+</head>
+<body class="ps1-scanlines">
+
+  <!-- 3D WebGL Viewport -->
+  <div id="canvas-container"></div>
+
+  <!-- Target Lock Reticle (3D Projected to 2D Screen) -->
+  <div id="target-reticle" class="fixed z-20 pointer-events-none hidden -translate-x-1/2 -translate-y-1/2 transition-transform duration-75">
+    <div class="w-16 h-16 border-2 border-red-500 rounded-lg flex items-center justify-center relative shadow-[0_0_15px_rgba(239,68,68,0.8)]">
+      <div class="w-2 h-2 bg-amber-400 rounded-full"></div>
+      <span id="reticle-label" class="absolute -top-5 px-1.5 py-0.5 bg-red-600/90 text-[10px] font-hud font-bold text-white rounded whitespace-nowrap">
+        LOCKED
+      </span>
+    </div>
+  </div>
+
+  <!-- ================= TOP BAR ================= -->
+  <header class="fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4 py-2.5 bg-slate-950/90 backdrop-blur-md border-b border-amber-500/30">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-red-600 via-orange-600 to-amber-500 flex items-center justify-center shadow-lg shadow-red-600/30 font-kart text-xl font-bold text-white border border-amber-300/40">
+        V8
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="font-kart text-base sm:text-lg font-bold tracking-wide text-white leading-none">
+            VIGILANTE KART 8 <span class="text-amber-400">PS1 ARENA</span>
+          </h1>
+          <span class="px-2 py-0.5 text-[10px] font-extrabold uppercase rounded-md bg-red-600/25 text-red-300 border border-red-500/40">
+            5 KARTS • 20 ARENAS PS1
+          </span>
+        </div>
+        <p class="text-[11px] text-slate-400 hidden sm:block">
+          5 vehículos por combate • Texturas PS1 • Sombras por sprite • Armas V8 • Exportación .GLB
+        </p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2 interactive">
+      <select id="quality-mode" aria-label="Rendimiento gráfico" title="Rendimiento gráfico">
+        <option value="auto">Auto</option>
+        <option value="battery">Ahorro · 24</option>
+        <option value="balanced">Equilibrado · 30</option>
+        <option value="fluid">Fluido · 60</option>
+      </select>
+      <button id="btn-fullscreen" aria-label="Pantalla completa" title="Pantalla completa">⛶</button>
+      <button id="btn-unlock-all" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 text-xs font-semibold transition flex items-center gap-1.5">
+        <span>🔓</span> <span class="hidden md:inline">Desbloquear 20 Arenas</span>
+      </button>
+      <button id="btn-export-glb-top" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/25 transition flex items-center gap-1.5">
+        <span>📦</span> <span>Descargar Kart Armado (.GLB)</span>
+      </button>
+      <button id="btn-back-menu" class="hidden px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition">
+        Retirarse al Hangar
+      </button>
+    </div>
+  </header>
+
+  <!-- ================= MENU & HANGAR SCREEN ================= -->
+  <section id="menu-screen" class="ui-layer pt-16 pb-4 px-4 flex flex-col lg:flex-row gap-4 justify-between items-stretch overflow-y-auto lg:overflow-hidden">
+    
+    <!-- Left Panel: Vigilante 8 Armed Kart Garage -->
+    <div class="interactive w-full lg:w-88 xl:w-96 bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-2xl p-4 flex flex-col justify-between shadow-2xl shrink-0">
+      <div>
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-3">
+          <div>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-red-400">Hangar de Combate V8</span>
+            <h2 class="font-kart text-xl text-white">Tu Kart Artillado PS1</h2>
+          </div>
+          <span class="px-2 py-0.5 text-[11px] rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold">
+            Armas Activas
+          </span>
+        </div>
+
+        <div class="space-y-2.5 text-xs">
+          <!-- Body Style Selector -->
+          <div class="bg-slate-950/75 p-2.5 rounded-xl border border-slate-800/80 space-y-1.5">
+            <label class="font-bold text-amber-300 block uppercase text-[10px] tracking-wider">Chasis Kart + Torreta V8</label>
+            <div class="grid grid-cols-3 gap-1.5" id="body-style-tabs">
+              <button data-body="standard" class="body-tab-btn py-1.5 px-2 rounded-lg font-kart text-xs border border-amber-400 bg-amber-500/20 text-white transition">
+                Standard MK8
+              </button>
+              <button data-body="pipeframe" class="body-tab-btn py-1.5 px-2 rounded-lg font-kart text-xs border border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800 transition">
+                Pipe Frame 64
+              </button>
+              <button data-body="bdasher" class="body-tab-btn py-1.5 px-2 rounded-lg font-kart text-xs border border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800 transition">
+                B-Dasher DS
+              </button>
+            </div>
+          </div>
+
+          <!-- Character Vigilante Presets -->
+          <div class="bg-slate-950/75 p-2.5 rounded-xl border border-slate-800/80 space-y-1.5">
+            <label class="font-semibold text-slate-300 block text-[11px]">Escoge uno de los 5 Karts PS1:</label>
+            <div class="grid grid-cols-5 gap-1">
+              <button data-preset="scarlet" class="preset-btn py-2 rounded bg-red-700/40 border border-red-400/70 text-white font-bold text-[10px]">FURIA</button>
+              <button data-preset="jade" class="preset-btn py-2 rounded bg-emerald-700/40 border border-emerald-400/70 text-white font-bold text-[10px]">COBRA</button>
+              <button data-preset="gold" class="preset-btn py-2 rounded bg-yellow-700/40 border border-yellow-400/70 text-white font-bold text-[10px]">TRUENO</button>
+              <button data-preset="magenta" class="preset-btn py-2 rounded bg-pink-700/40 border border-pink-400/70 text-white font-bold text-[10px]">RAYO</button>
+              <button data-preset="cobalt" class="preset-btn py-2 rounded bg-blue-700/40 border border-blue-400/70 text-white font-bold text-[10px]">NEÓN</button>
+            </div>
+            <p id="kart-selected-label" class="text-[10px] font-hud text-amber-300">FURIA ROJA • textura PS1</p>
+            <img src="./assets/cars/five_karts_preview.png" alt="Las cinco pinturas de vehículo estilo PS1" class="w-full rounded mt-1" loading="lazy">
+          </div>
+
+          <!-- Colors -->
+          <div class="flex items-center justify-between bg-slate-950/70 p-2 rounded-xl border border-slate-800/80">
+            <label class="font-semibold text-slate-300">Carenado & Gorra</label>
+            <div class="flex items-center gap-2">
+              <input type="color" id="kart-color-primary" value="#e64242" class="w-8 h-6 rounded cursor-pointer bg-transparent border-0" />
+              <span id="label-color-primary" class="font-mono text-[11px] text-slate-400">#E64242</span>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between bg-slate-950/70 p-2 rounded-xl border border-slate-800/80">
+            <label class="font-semibold text-slate-300">Blindaje & Chasis</label>
+            <div class="flex items-center gap-2">
+              <input type="color" id="kart-color-secondary" value="#3155bd" class="w-8 h-6 rounded cursor-pointer bg-transparent border-0" />
+              <span id="label-color-secondary" class="font-mono text-[11px] text-slate-400">#3155BD</span>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between bg-slate-950/70 p-2 rounded-xl border border-slate-800/80">
+            <label class="font-semibold text-slate-300">Llantas Estrella</label>
+            <div class="flex items-center gap-2">
+              <input type="color" id="kart-color-rims" value="#f6c65b" class="w-8 h-6 rounded cursor-pointer bg-transparent border-0" />
+              <span id="label-color-rims" class="font-mono text-[11px] text-slate-400">#F6C65B</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div class="bg-slate-950/70 p-2 rounded-xl border border-slate-800/80 flex items-center justify-between">
+              <span class="font-semibold text-slate-300">Emblema</span>
+              <select id="kart-emblem-char" class="bg-slate-800 text-amber-300 font-kart px-2 py-0.5 rounded border border-slate-700 text-xs">
+                <option value="F">F (Furia)</option>
+                <option value="C">C (Cobra)</option>
+                <option value="T">T (Trueno)</option>
+                <option value="R">R (Rayo)</option>
+                <option value="N">N (Neón)</option>
+                <option value="★">★ (Vigilante)</option>
+              </select>
+            </div>
+            <div class="bg-slate-950/70 p-2 rounded-xl border border-slate-800/80 flex items-center justify-between">
+              <span class="font-semibold text-slate-300">Config.</span>
+              <select id="kart-tuning-mode" class="bg-slate-800 text-amber-300 font-bold px-1.5 py-0.5 rounded border border-slate-700 text-[11px]">
+                <option value="balanced">Equilibrado</option>
+                <option value="heavy">Tanque (+Blindaje)</option>
+                <option value="interceptor">Interceptor (+Vel)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls Legend & Export -->
+      <div class="mt-3 pt-2.5 border-t border-slate-800 space-y-2">
+        <div class="bg-slate-950/95 rounded-xl p-2.5 border border-red-500/30 text-[11px] text-slate-300 space-y-1">
+          <div class="font-bold text-amber-400 uppercase tracking-wider text-[10px]">Controles Vigilante 8 (PS1)</div>
+          <div class="flex justify-between"><span>Conducir / Reversa:</span> <kbd class="px-1.5 bg-slate-800 rounded text-white font-mono">W / S</kbd> o <kbd class="px-1.5 bg-slate-800 rounded text-white font-mono">↑ / ↓</kbd></div>
+          <div class="flex justify-between"><span>Girar / Derrape Táctico:</span> <kbd class="px-1.5 bg-slate-800 rounded text-amber-300 font-mono">A / D + SHIFT</kbd></div>
+          <div class="flex justify-between"><span>Ametralladora (Infinita):</span> <kbd class="px-1.5 bg-slate-800 rounded text-rose-400 font-mono">F / CLIC / Z</kbd></div>
+          <div class="flex justify-between"><span>Arma Especial V8:</span> <kbd class="px-1.5 bg-slate-800 rounded text-emerald-300 font-mono">ESPACIO / E</kbd></div>
+        </div>
+
+        <button id="btn-export-glb-garage" class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-kart text-sm shadow-lg shadow-emerald-600/30 transition flex items-center justify-center gap-2">
+          <span>⬇️</span> <span>EXPORTAR KART ARTILLADO (.GLB)</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Right Panel: 20 Combat Arenas (5 Biomes) Selector -->
+    <div class="interactive w-full lg:w-[540px] xl:w-[640px] bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-2xl p-4 flex flex-col justify-between shadow-2xl overflow-hidden">
+      <div>
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3 mb-3">
+          <div>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-red-400">Modo Todos Contra Todos (Free-For-All)</span>
+            <h2 class="font-kart text-xl text-white">Selecciona Zona de Guerra 5X (20 Niveles)</h2>
+          </div>
+          <div class="flex items-center gap-2 bg-slate-950 px-3 py-1 rounded-full border border-slate-800 text-xs">
+            <span>💥 Zonas Liberadas:</span>
+            <strong id="progress-counter" class="text-amber-400">20 / 20</strong>
+          </div>
+        </div>
+
+        <!-- Biome Filter Tabs -->
+        <div id="cup-tabs" class="grid grid-cols-5 gap-1.5 mb-3"></div>
+
+        <!-- Biome Visual & Surface Physics Info Banner -->
+        <div id="cup-biome-banner" class="mb-3 p-2.5 rounded-xl border border-slate-700/80 bg-slate-950/90 flex items-center justify-between text-xs"></div>
+      </div>
+
+      <!-- Arenas Grid -->
+      <div id="levels-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 overflow-y-auto pr-1 max-h-[340px] lg:max-h-none flex-1"></div>
+
+      <!-- Quick Start Footer -->
+      <div class="mt-3 pt-3 border-t border-slate-800 flex items-center justify-between gap-3">
+        <div class="text-xs text-slate-300 truncate">
+          Misión: <strong id="selected-track-title" class="text-amber-300">Arena 1</strong>
+        </div>
+        <button id="btn-start-race" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-red-600 via-orange-500 to-amber-400 hover:brightness-110 text-slate-950 font-kart text-base font-bold shadow-xl shadow-red-600/30 transition shrink-0">
+          🔥 ¡INICIAR COMBATE TOTAL!
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= VIGILANTE 8 COMBAT HUD ================= -->
+  <section id="hud-screen" class="ui-layer hidden pt-14 pb-4 px-4 flex flex-col justify-between">
+    <!-- Top HUD Row -->
+    <div class="flex items-start justify-between gap-2">
+      
+      <!-- Player Hull Integrity (Armor HP) & Kills -->
+      <div id="hud-armor-panel" class="flex flex-col gap-2 bg-slate-950/90 backdrop-blur-md border border-slate-800 p-3 rounded-2xl shadow-xl min-w-[250px] sm:min-w-[300px]">
+        <div class="flex items-center justify-between text-xs">
+          <span class="font-hud font-bold uppercase text-amber-400">BLINDAJE CHASIS (HP)</span>
+          <span id="hud-hp-text" class="font-hud font-extrabold text-emerald-400">100 / 100</span>
+        </div>
+        <div class="w-full h-4 bg-slate-900 rounded-lg overflow-hidden border border-slate-700 p-0.5">
+          <div id="hud-hp-bar" class="h-full bg-gradient-to-r from-emerald-500 to-lime-400 rounded transition-all duration-100" style="width: 100%"></div>
+        </div>
+        <div class="flex items-center justify-between pt-1 border-t border-slate-800/80 text-xs">
+          <div>
+            <span class="text-slate-400 text-[10px] uppercase block">Enemigos Restantes</span>
+            <strong id="hud-enemies-alive" class="font-kart text-lg text-red-400">4 RIVALES</strong>
+          </div>
+          <div class="text-right">
+            <span class="text-slate-400 text-[10px] uppercase block">Tus Bajas (Kills)</span>
+            <strong id="hud-kills" class="font-kart text-lg text-amber-300">0 💥</strong>
+          </div>
+          <div class="text-right">
+            <span class="text-slate-400 text-[10px] uppercase block">Tiempo</span>
+            <strong id="hud-timer" class="font-hud text-sm text-slate-200">00:00</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Center Special Weapon Crate Slot + Machine Gun Indicator -->
+      <div id="hud-loadout-panel" class="flex flex-col items-center">
+        <div class="flex items-center gap-2">
+          <!-- Primary MG -->
+          <div class="w-16 h-20 sm:w-20 sm:h-24 rounded-2xl bg-slate-950/90 border border-slate-700 flex flex-col items-center justify-center p-1 shadow-xl">
+            <span class="text-xl sm:text-2xl">🔫</span>
+            <span class="text-[9px] font-hud font-bold text-slate-300 uppercase mt-1">Gatling</span>
+            <span class="text-[10px] font-hud font-extrabold text-amber-400">∞ BALAS</span>
+          </div>
+
+          <!-- Special V8 Weapon -->
+          <div id="hud-weapon-slot" class="w-24 h-20 sm:w-28 sm:h-24 rounded-2xl bg-slate-950/95 border-2 border-red-500/80 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden p-1">
+            <div id="hud-weapon-icon" class="text-2xl sm:text-3xl">📦</div>
+            <div id="hud-weapon-name" class="text-[10px] font-extrabold uppercase tracking-wider text-amber-300 mt-0.5 text-center leading-tight">Sin Arma</div>
+            <div id="hud-weapon-ammo" class="text-[10px] font-hud text-emerald-400 font-bold">--</div>
+          </div>
+        </div>
+        <span class="text-[10px] text-slate-300 bg-slate-950/85 px-2.5 py-0.5 rounded-full mt-1 border border-slate-800">
+          [F / Clic] Ametralladora • [ESPACIO] Arma Especial V8
+        </span>
+      </div>
+
+      <!-- Right: Combat Radar & Enemy Health Bars -->
+      <div id="hud-radar-panel" class="hidden sm:flex items-center gap-3 bg-slate-950/90 backdrop-blur-md border border-slate-800 p-2.5 rounded-2xl shadow-xl">
+        <div class="text-right space-y-1 min-w-[135px]">
+          <div id="hud-track-name" class="font-kart text-sm text-amber-300 truncate">Arena 1</div>
+          <div id="hud-biome-badge" class="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-200 inline-block">
+            Asfalto
+          </div>
+          <div id="hud-enemy-list" class="space-y-1 pt-1 text-[10px] font-hud">
+            <!-- Populated dynamically with enemy HP bars -->
+          </div>
+        </div>
+        <canvas id="hud-radar" width="116" height="116" class="rounded-full bg-slate-900 border-2 border-emerald-500/50 shadow-inner"></canvas>
+      </div>
+    </div>
+
+    <!-- Center Announcement / Kill Feed Banner -->
+    <div class="flex flex-col items-center justify-center pointer-events-none my-auto">
+      <div id="hud-center-banner" class="font-kart text-4xl sm:text-6xl font-bold text-amber-300 kart-shadow-text hidden text-center">
+        ¡TODOS CONTRA TODOS!
+      </div>
+      <div id="hud-event-feed" class="mt-2 text-xs sm:text-sm font-bold text-white bg-red-950/90 px-4 py-1.5 rounded-full border border-red-400/60 shadow-lg hidden">
+        🎯 ¡Blanco destruido!
+      </div>
+    </div>
+
+    <!-- Bottom HUD Row: Speedometer, Turbo & Mobile Combat Touch Controls -->
+    <div id="hud-bottom-row" class="flex items-end justify-between gap-3">
+      <!-- Touch Controls Left (Steer) -->
+      <div id="hud-steering" class="flex lg:hidden items-center gap-2 interactive">
+        <button id="touch-left" class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-slate-900/90 active:bg-amber-500 active:text-slate-950 border border-slate-700 text-2xl font-bold shadow-lg">◀</button>
+        <button id="touch-right" class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-slate-900/90 active:bg-amber-500 active:text-slate-950 border border-slate-700 text-2xl font-bold shadow-lg">▶</button>
+      </div>
+
+      <!-- Speed & Physics Telemetry -->
+      <div id="hud-speed-panel" class="bg-slate-950/90 backdrop-blur-md border border-slate-800 px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-4 mx-auto lg:mx-0">
+        <div>
+          <div class="text-[10px] font-bold uppercase text-slate-400">Velocidad</div>
+          <div class="flex items-baseline gap-1">
+            <span id="hud-speed" class="font-kart text-2xl sm:text-3xl text-white">0</span>
+            <span class="text-[10px] font-bold text-amber-400">KM/H</span>
+          </div>
+        </div>
+        <div class="w-32 sm:w-40 space-y-1">
+          <div class="flex justify-between text-[10px] font-bold uppercase">
+            <span class="text-slate-400">Postquemador</span>
+            <span id="hud-grip-val" class="text-emerald-400">Agarre 100%</span>
+          </div>
+          <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden p-0.5">
+            <div id="hud-speed-bar" class="h-full bg-gradient-to-r from-emerald-400 via-amber-400 to-rose-500 rounded-full transition-all duration-75" style="width: 0%"></div>
+          </div>
+          <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+            <div id="hud-drift-bar" class="h-full bg-cyan-400 transition-all duration-75" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Touch Controls Right (MG, Special Weapon, Drift, Gas/Reverse) -->
+      <div id="hud-actions" class="flex lg:hidden items-center gap-1.5 interactive">
+        <button id="touch-mg" class="w-14 h-14 sm:h-16 rounded-2xl bg-rose-600/90 active:bg-rose-400 border border-rose-400 text-[10px] font-extrabold uppercase shadow-lg">
+          🔫 MG
+        </button>
+        <button id="touch-special" class="w-14 h-14 sm:h-16 rounded-2xl bg-emerald-600/90 active:bg-emerald-400 border border-emerald-400 text-[10px] font-extrabold uppercase shadow-lg">
+          🚀 ARMA
+        </button>
+        <button id="touch-drift" class="w-14 h-14 sm:h-16 rounded-2xl bg-amber-600/90 active:bg-amber-400 border border-amber-400 text-[10px] font-extrabold uppercase shadow-lg">
+          DRIFT
+        </button>
+        <button id="touch-brake" class="w-12 h-14 sm:h-16 rounded-2xl bg-slate-800/90 active:bg-slate-600 border border-slate-600 text-[10px] font-extrabold uppercase shadow-lg">
+          REV
+        </button>
+        <button id="touch-gas" class="w-14 h-14 sm:h-16 rounded-2xl bg-blue-600/90 active:bg-blue-400 border border-blue-400 text-[10px] font-extrabold uppercase shadow-lg">
+          GAS
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= FINISH / GAME OVER MODAL ================= -->
+  <section id="finish-modal" class="ui-layer hidden bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="interactive bg-slate-900 border border-slate-700 rounded-3xl max-w-md w-full p-6 text-center shadow-2xl space-y-4">
+      <div id="finish-trophy" class="text-6xl">💥</div>
+      <div>
+        <span id="finish-subtitle" class="text-xs font-bold uppercase tracking-widest text-amber-400">Reporte de Combate V8</span>
+        <h2 id="finish-title" class="font-kart text-3xl text-white mt-1">¡ARENA SUPERADA!</h2>
+      </div>
+      <p id="finish-desc" class="text-xs text-slate-300 leading-relaxed">
+        Todos los karts enemigos han sido reducidos a chatarra en la arena 5X.
+      </p>
+      <div class="bg-slate-950 rounded-2xl p-3 border border-slate-800 grid grid-cols-2 gap-2 text-xs">
+        <div>
+          <span class="text-slate-400 block">Tiempo de Batalla</span>
+          <strong id="finish-time" class="text-emerald-400 font-hud text-base">01:28.4</strong>
+        </div>
+        <div>
+          <span class="text-slate-400 block">Vehículos Destruidos</span>
+          <strong id="finish-kills" class="text-amber-300 font-kart text-base">5 Bajas</strong>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 pt-2">
+        <button id="btn-retry-level" class="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs transition">
+          🔄 Reintentar Arena
+        </button>
+        <button id="btn-next-level" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-amber-500 hover:brightness-110 text-slate-950 font-kart text-sm font-bold shadow-lg transition">
+          Siguiente Arena ➔
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= MAIN SCRIPT ================= -->
+  <!-- Módulos ES2020: la lógica vive en js/ según su responsabilidad. -->
+  <script type="module" src="./js/main.js?v=meadow-models-r1"></script>
+
+</body>
+</html>

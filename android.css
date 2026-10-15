@@ -1,0 +1,83 @@
+/* HUD compacto y zonas seguras para Android horizontal y vertical. */
+#quality-mode, #btn-fullscreen {
+  background: #182231; color: #dce8f7; border: 1px solid #3c4c60;
+  border-radius: 8px; min-height: 32px; font: 600 11px system-ui; padding: 4px 8px;
+}
+#btn-fullscreen { font-size: 20px; min-width: 34px; }
+#hud-hp-bar { background-image: none; }
+.in-combat #btn-export-glb-top, .in-combat #btn-unlock-all { display: none; }
+.in-combat header p { display: none; }
+.in-combat header { padding-top: max(4px, env(safe-area-inset-top)); padding-bottom: 4px; }
+#hud-screen { padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+#hud-actions button, #hud-steering button { flex-shrink: 0; touch-action: none; }
+#hud-radar { image-rendering: auto; }
+#btn-start-race:disabled { opacity: 0.55; cursor: not-allowed; }
+@media (max-width: 1023px) {
+  /* Permitir scroll del selector completo sin comprimir las tarjetas bajo el pie. */
+  #menu-screen > .interactive { flex-shrink: 0; }
+  #levels-grid { flex: none; }
+}
+@media (pointer: coarse) {
+  [class*="backdrop-blur"] { backdrop-filter: none !important; }
+  #hud-steering { display: flex !important; }
+  #hud-actions { display: grid !important; grid-template-columns: repeat(3, 54px); }
+  .weapon-ready-glow { animation: none; border-color: #fbbf24; }
+}
+@media (max-width: 1023px), (max-height: 520px) {
+  header { gap: 6px; padding-left: max(8px, env(safe-area-inset-left)); padding-right: max(8px, env(safe-area-inset-right)); }
+  header h1 { font-size: 11px !important; }
+  header h1 + span, header p, header h1 span { display: none !important; }
+  header > div:first-child { gap: 6px; }
+  header > div:first-child > div:first-child { width: 28px; height: 28px; font-size: 14px; }
+  #btn-export-glb-top { font-size: 0; padding: 6px; }
+  #btn-export-glb-top > span:first-child { font-size: 16px; }
+  #btn-back-menu { font-size: 10px; padding: 6px 8px; }
+  #quality-mode { max-width: 120px; }
+  #hud-screen { padding-top: calc(48px + env(safe-area-inset-top)) !important; }
+  #hud-armor-panel { min-width: 190px !important; max-width: 210px; padding: 7px; gap: 4px; border-radius: 12px; }
+  #hud-armor-panel > div:first-child { font-size: 9px; }
+  #hud-armor-panel > div:nth-child(2) { height: 10px; }
+  #hud-armor-panel strong { font-size: 12px; }
+  #hud-armor-panel > div:last-child > div { min-width: 0; }
+  #hud-armor-panel > div:last-child > div > span { font-size: 0; }
+  #hud-armor-panel > div:last-child > div > span::after { font-size: 8px; }
+  #hud-armor-panel > div:last-child > div:nth-child(1) > span::after { content: 'RIVALES'; }
+  #hud-armor-panel > div:last-child > div:nth-child(2) > span::after { content: 'BAJAS'; }
+  #hud-armor-panel > div:last-child > div:nth-child(3) > span::after { content: 'TIEMPO'; }
+  #hud-armor-panel strong { white-space: nowrap; }
+  #hud-armor-panel span.text-slate-400 { font-size: 8px; }
+  #hud-loadout-panel > div > div:first-child, #hud-loadout-panel > span { display: none; }
+  #hud-weapon-slot { width: 85px; height: 64px; border-radius: 12px; }
+  #hud-weapon-icon { font-size: 18px; }
+  #hud-weapon-name, #hud-weapon-ammo { font-size: 8px; }
+  #hud-radar-panel { display: flex !important; padding: 4px; background: #0b1627b3; border-radius: 50%; }
+  #hud-radar-panel > div { display: none; }
+  #hud-radar { width: 76px; height: 76px; }
+  #hud-center-banner { font-size: clamp(18px, 4vw, 28px); }
+  #hud-event-feed { max-width: 75vw; text-align: center; font-size: 10px; padding: 5px 10px; }
+  #hud-bottom-row { gap: 8px; align-items: flex-end; }
+  #hud-steering { display: flex !important; gap: 7px; }
+  #hud-actions { display: grid !important; grid-template-columns: repeat(3, 54px); gap: 6px; }
+  #hud-actions button, #hud-steering button { width: 54px !important; height: 50px !important; border-radius: 14px; font-size: 10px; }
+  #hud-steering button { width: 58px !important; height: 58px !important; font-size: 22px; }
+  #hud-speed-panel { padding: 7px 10px; gap: 6px; margin: 0 auto; border-radius: 12px; }
+  #hud-speed-panel > div:nth-child(2) { width: 75px; }
+  #hud-speed-panel > div:nth-child(2) > div:first-child { display: none; }
+  #hud-speed-panel > div:first-child > div:first-child { display: none; }
+  #hud-speed { font-size: 23px; }
+}
+@media (max-width: 600px) {
+  #hud-armor-panel { min-width: 160px !important; max-width: 175px; }
+  #hud-armor-panel > div:first-child > span:first-child { font-size: 0; }
+  #hud-armor-panel > div:first-child > span:first-child::after { content: 'BLINDAJE'; font-size: 9px; }
+  #hud-radar { width: 58px; height: 58px; }
+  #hud-weapon-slot { width: 75px; height: 62px; }
+  #hud-speed-panel { position: absolute; bottom: calc(134px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); }
+  #hud-bottom-row { margin-top: auto; }
+  #hud-steering button { width: 52px !important; height: 58px !important; }
+  #hud-actions { grid-template-columns: repeat(3, 48px); }
+  #hud-actions button { width: 48px !important; height: 50px !important; font-size: 9px; }
+  #quality-mode { max-width: 92px; }
+  header h1 { font-size: 9px !important; white-space: nowrap; }
+  #btn-back-menu { max-width: 80px; line-height: 12px; }
+}
